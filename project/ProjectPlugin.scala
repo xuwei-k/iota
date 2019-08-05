@@ -86,8 +86,8 @@ object ProjectPlugin extends AutoPlugin {
     outputStrategy := Some(StdoutOutput),
     connectInput in run := true,
     cancelable in Global := true,
-    crossScalaVersions := List("2.11.12", "2.12.6"),
-    scalaVersion := "2.12.6",
+    crossScalaVersions := List("2.11.12", "2.12.8"),
+    scalaVersion := "2.12.8",
     dependencyUpdatesFilter -= moduleFilter(organization = "org.eclipse.jetty") |
       moduleFilter(organization = "org.openjdk.jmh") |
       moduleFilter(organization = "pl.project13.scala", name = "sbt-jmh-extras")
