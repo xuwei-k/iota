@@ -15,10 +15,12 @@ lazy val core = module("core", hideFolder = true)
   .settings(macroSettings)
   .settings(yax(file("modules/core/src/main/scala"), Compile,
     flags    = "cats" :: Nil,
-    yaxScala = true))
-  .crossDepSettings(
-    %%("cats-core", "1.6.1"),
-    %%("cats-free", "1.6.1"))
+    yaxScala = true),
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "cats-core" % "2.0.0-RC1",
+      "org.typelevel" %%% "cats-free" % "2.0.0-RC1",
+    )
+  )
 
 lazy val coreJVM = core.jvm
 lazy val coreJS  = core.js
@@ -27,9 +29,11 @@ lazy val corez = module("core", hideFolder = true, prefixSuffix = "z")
   .settings(macroSettings)
   .settings(yax(file("modules/core/src/main/scala"), Compile,
     flags    = "scalaz" :: Nil,
-    yaxScala = true))
-  .crossDepSettings(
-    "org.scalaz" %% "scalaz-core" % "7.2.28")
+    yaxScala = true),
+    libraryDependencies ++= Seq(
+      "org.scalaz" %%% "scalaz-core" % "7.2.28"
+    )
+  )
 
 lazy val corezJVM = corez.jvm
 lazy val corezJS  = corez.js
@@ -39,9 +43,11 @@ lazy val scalacheck = module("scalacheck", hideFolder = true)
   .settings(macroSettings)
   .settings(yax(file("modules/scalacheck/src/main/scala"), Compile,
     flags    = "cats" :: Nil,
-    yaxScala = true))
-  .crossDepSettings(
-    %%("scalacheck"))
+    yaxScala = true),
+    libraryDependencies ++= Seq(
+      "org.scalacheck" %%% "scalacheck" % "1.14.0"
+    )
+  )
 
 lazy val scalacheckJVM = scalacheck.jvm
 lazy val scalacheckJS  = scalacheck.js
@@ -51,9 +57,11 @@ lazy val scalacheckz = module("scalacheck", hideFolder = true, prefixSuffix = "z
   .settings(macroSettings)
   .settings(yax(file("modules/scalacheck/src/main/scala"), Compile,
     flags    = "scalaz" :: Nil,
-    yaxScala = true))
-  .crossDepSettings(
-    %%("scalacheck"))
+    yaxScala = true),
+    libraryDependencies ++= Seq(
+      "org.scalacheck" %%% "scalacheck" % "1.14.0"
+    )
+  )
 
 lazy val scalacheckzJVM = scalacheckz.jvm
 lazy val scalacheckzJS  = scalacheckz.js
@@ -68,11 +76,13 @@ lazy val tests = module("tests", hideFolder = true)
     yaxPlatform = true))
   .settings(yax(file("modules/tests/src/test/scala"), Test,
     flags       = "cats" :: Nil,
-    yaxPlatform = true))
-  .crossDepSettings(
-    %%("scalacheck")      % "test",
-    %%("shapeless")       % "test",
-    %%("scheckShapeless") % "test")
+    yaxPlatform = true),
+    libraryDependencies ++= Seq(
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" % "test",
+      "com.chuusai" %%% "shapeless" % "2.3.3" % "test",
+      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.14" % "1.2.3" % "test"
+    )
+  )
 
 lazy val testsJVM = tests.jvm
 lazy val testsJS  = tests.js
@@ -87,11 +97,13 @@ lazy val testsz = module("tests", hideFolder = true, prefixSuffix = "z")
     yaxPlatform = true))
   .settings(yax(file("modules/tests/src/test/scala"), Test,
     flags       = "scalaz" :: Nil,
-    yaxPlatform = true))
-  .crossDepSettings(
-    %%("scalacheck")      % "test",
-    %%("shapeless")       % "test",
-    %%("scheckShapeless") % "test")
+    yaxPlatform = true),
+    libraryDependencies ++= Seq(
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" % "test",
+      "com.chuusai" %%% "shapeless" % "2.3.3" % "test",
+      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.14" % "1.2.3"
+    )
+  )
 
 lazy val testszJVM = testsz.jvm.settings(
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
@@ -112,8 +124,11 @@ lazy val examplesScalaz = module("examples-scalaz")
   .dependsOn(corez)
   .settings(noPublishSettings)
   .settings(macroSettings)
-  .crossDepSettings(
-    "org.scalaz" %% "scalaz-effect" % "7.2.28")
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalaz" %%% "scalaz-effect" % "7.2.28"
+    )
+  )
 
 lazy val examplesScalazJVM = examplesScalaz.jvm
 lazy val examplesScalazJS  = examplesScalaz.js
@@ -172,4 +187,23 @@ lazy val macroSettings: Seq[Setting[_]] = Seq(
   libraryDependencies ++= Seq(
     scalaOrganization.value % "scala-compiler" % scalaVersion.value % Provided,
     scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided,
-    compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch)))
+  ),
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+     case Some((2, v)) if v <= 12 =>
+       Nil
+     case _ =>
+       Seq("-Ymacro-annotations")
+    }
+  },
+  libraryDependencies ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+     case Some((2, v)) if v <= 12 =>
+       Seq(
+         compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch)
+       )
+     case _ =>
+       Nil
+    }
+  }
+)

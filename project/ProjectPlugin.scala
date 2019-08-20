@@ -7,8 +7,10 @@ import sbtorgpolicies.OrgPoliciesPlugin.autoImport._
 import sbtorgpolicies.templates.badges._
 import sbtorgpolicies.templates._
 import scoverage.ScoverageKeys._
-import org.scalajs.sbtplugin.cross.{CrossProject, CrossType}
-import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+import sbtcrossproject.{CrossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport._
+import scalajscrossproject.JSPlatform
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.{CrossType => _, _}
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport._
 
@@ -26,9 +28,24 @@ object ProjectPlugin extends AutoPlugin {
       CrossProject(
         s"$modName$prefixSuffix",
         file(s"""modules/${if (hideFolder) "." else ""}$modName$prefixSuffix"""),
+      )(JVMPlatform, JSPlatform)
+      .crossType(
         CrossType.Pure
       )
-        .settings(moduleName := s"iota${prefixSuffix}-$modName")
+      .settings(moduleName := s"iota${prefixSuffix}-$modName")
+      .settings(
+        scalacOptions --= {
+          CrossVersion.partialVersion(scalaVersion.value) match {
+            case Some((2, v)) if v <= 12 =>
+              Nil
+            case _ =>
+              Seq(
+                "-Yno-adapted-args",
+                "-Ypartial-unification"
+              )
+          }
+        }
+      )
 
     def jvmModule(modName: String): Project =
       Project(modName, file(s"""modules/$modName"""))
@@ -86,8 +103,10 @@ object ProjectPlugin extends AutoPlugin {
     outputStrategy := Some(StdoutOutput),
     connectInput in run := true,
     cancelable in Global := true,
-    crossScalaVersions := List("2.11.12", "2.12.6"),
-    scalaVersion := "2.12.6",
+    crossScalaVersions := List("2.12.8", "2.13.0"),
+    scalaVersion := "2.12.8",
+    libraryDependencies ~= (_.filterNot(module => module.organization == "org.spire-math" && module.name == "kind-projector")),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
     dependencyUpdatesFilter -= moduleFilter(organization = "org.eclipse.jetty") |
       moduleFilter(organization = "org.openjdk.jmh") |
       moduleFilter(organization = "pl.project13.scala", name = "sbt-jmh-extras")
